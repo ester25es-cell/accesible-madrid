@@ -807,5 +807,7 @@
   renderCatalog();
   renderAll();
   updateAnimButton();
-  openIntro(true);
+  if (location.hash === '#accesibilidad') { openDialog($('d-ajustes'), $('b-dia')); }
+  else openIntro(true);
+  window.addEventListener('hashchange', function () { if (location.hash === '#accesibilidad' && !$('d-ajustes').open) openDialog($('d-ajustes'), $('b-dia')); });
 })();
