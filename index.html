@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Accesible Madrid · Lavapiés para todos</title>
+<meta name="description" content="Simulador de ciudad inclusiva: quita barreras para que todos los vecinos de Lavapiés lleguen a donde quieren.">
+<meta name="theme-color" content="#1D4ED8">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Accesible Madrid">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#F6F5F1; --surface:#FFFFFF; --ink:#16191D; --muted:#4B5563; --line:#8A919C; --soft:#E5E7EB;
+  --accent:#1D4ED8; --accent-ink:#1E3A8A; --accent-tint:#E8EEFB;
+  --warn:#B45309; --warn-ink:#8A3B07; --warn-tint:#FDF0E3;
+  --map:#E9E6DD; --block:#D6D1C4; --block-line:#B9B3A4; --focus:#16191D;
+  font-size:100%;
+}
+html.hc{ --bg:#FFFFFF; --muted:#16191D; --line:#16191D; --accent:#0B3BB5; --warn:#8A3B07; --warn-ink:#6A2C05; --map:#FFFFFF; --block:#EDEDED; --block-line:#16191D; }
+html.t125{font-size:125%} html.t150{font-size:150%} html.t200{font-size:200%}
+*{box-sizing:border-box}
+body{margin:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:var(--bg);color:var(--ink);font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-size:1rem;line-height:1.4}
+a{color:var(--accent)}
+button,select,input{font:inherit;color:inherit}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.skip{position:absolute;left:8px;top:-60px;background:var(--ink);color:#fff;padding:10px 14px;border-radius:8px;z-index:10}
+.skip:focus{top:8px}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.btn{min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--line);background:var(--surface);border-radius:8px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.dark{background:var(--ink);border-color:var(--ink);color:#fff}
+.btn[aria-disabled="true"]{background:#F3F4F6;color:var(--muted);border-style:dashed;cursor:not-allowed}
+header.top{display:flex;flex-wrap:wrap;align-items:center;gap:12px 24px;padding:12px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top h1{margin:0;font-size:1.15rem}
+header.top .sub{color:var(--muted);font-size:.9rem}
+.stats{display:flex;flex-wrap:wrap;gap:8px 24px;margin:0;flex:1 1 420px}
+.stats div{display:flex;flex-direction:column}
+.stats dt{font-size:.85rem;color:var(--muted)}
+.stats dd{margin:0;font-size:1.15rem;font-weight:700}
+.meter{height:10px;border:1px solid var(--line);border-radius:5px;background:var(--soft);overflow:hidden;width:160px;margin-top:4px;position:relative}
+.meter>span{display:block;height:100%;background:var(--accent)}
+.meter>i{position:absolute;top:-2px;bottom:-2px;left:70%;border-left:2px solid var(--ink)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.layout{display:flex;flex-wrap:wrap;gap:16px;padding:16px 20px;align-items:flex-start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px}
+.panel h2{margin:0 0 10px;font-size:1.1rem}
+#construir{flex:1 1 14rem;max-width:18rem;min-width:0}
+#centro{flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:10px}
+#lateral{flex:1 1 17rem;max-width:24rem;min-width:0;display:flex;flex-direction:column;gap:16px}
+fieldset{border:none;margin:0;padding:0;min-width:0}
+.opt{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer}
+.opt input{width:20px;height:20px;accent-color:var(--accent);flex-shrink:0}
+.opt .name{flex:1}
+.opt.on{border:2px solid var(--accent);background:var(--accent-tint)}
+.hint{font-size:.9rem;color:var(--muted);margin:8px 0 0}
+[role=tablist]{display:flex;gap:6px}
+[role=tab]{min-height:44px;padding:0 16px;border:1px solid var(--line);background:var(--surface);border-radius:8px 8px 0 0;font-weight:700;cursor:pointer}
+[role=tab][aria-selected=true]{border:2px solid var(--accent);border-bottom-color:var(--surface);color:var(--accent-ink);background:var(--surface)}
+.mapwrap{background:var(--map);border:1px solid var(--line);border-radius:0 10px 10px 10px;position:relative}
+#mapa{display:block;width:100%;height:auto}
+.mapbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 2px}
+.mapbar output{font-weight:700;min-width:7em}
+.mapscroll{overflow:auto;max-height:78vh;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;border-radius:0 10px 10px 10px}
+#det-cerrar{display:none}
+@media (max-width:760px){
+  .layout{padding:10px;gap:12px}
+  #centro{order:1;flex-basis:100%}
+  #lateral{order:2;max-width:none;flex-basis:100%}
+  #construir{order:3;max-width:none;flex-basis:100%}
+  header.top{padding:10px}
+  .stats{gap:6px 16px}
+  #detalle.sheet{position:fixed;left:0;right:0;bottom:0;padding-bottom:calc(14px + env(safe-area-inset-bottom));z-index:20;max-height:46vh;overflow:auto;border-radius:16px 16px 0 0;border-width:2px;box-shadow:0 -6px 24px rgba(0,0,0,.25)}
+  #detalle.sheet #det-cerrar{display:inline-flex}
+  body.has-sheet{padding-bottom:48vh}
+  .street-label{font-size:13px}
+}
+.street-label{font-size:12px;fill:var(--ink)}
+.edge .vis{stroke-width:10;stroke-linecap:round;fill:none}
+.edge.okk .vis{stroke:var(--accent)}
+.edge.bar .vis{stroke:var(--warn);stroke-dasharray:12 8}
+.edge .hit{stroke:transparent;stroke-width:34;fill:none;cursor:pointer}
+.edge .ring,.dest .ring{fill:none;stroke:var(--focus);stroke-width:3;stroke-dasharray:6 4;display:none}
+.edge:focus,.dest:focus{outline:none}
+.edge:focus-visible .ring,.dest:focus-visible .ring{display:block}
+.edge.sel .vis{stroke-width:14}
+.edge.sel .selring,.dest.sel .selring{display:block}
+.selring{display:none;fill:none;stroke:var(--ink);stroke-width:4}
+.edge.applies .halo{display:block}
+.halo{display:none;fill:none;stroke:var(--accent);stroke-opacity:.35;stroke-width:26;stroke-linecap:round}
+.badge circle{fill:var(--warn);stroke:#fff;stroke-width:2}
+.badge text{fill:#fff;font-size:12px;font-weight:700}
+.dest{cursor:pointer}
+.dest rect.box{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
+.dest.hasbar rect.box{stroke:var(--warn);stroke-width:3}
+.dest text{font-size:12px;font-weight:700;fill:var(--ink)}
+.home circle{fill:var(--ink)} .home text{fill:#fff;font-size:13px;font-weight:700}
+.route{fill:none;stroke:var(--ink);stroke-width:4;stroke-dasharray:2 6;stroke-linecap:round}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.9rem;padding:8px 2px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+table{border-collapse:collapse;width:100%}
+th,td{text-align:left;padding:8px 6px;border-top:1px solid var(--soft);vertical-align:top}
+thead th{border-top:none;font-size:.85rem;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:2px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);cursor:pointer;margin:2px 4px 2px 0;font-size:.9rem}
+.chip.fallido,.chip.abandonado{border:2px solid var(--warn);background:var(--warn-tint);color:var(--warn-ink);font-weight:700}
+.chip.dificultad{border:2px dashed var(--line)}
+.ia{font-weight:700}
+.ia.low{color:var(--warn-ink)}
+.minibar{height:8px;width:90px;background:var(--soft);border:1px solid var(--line);border-radius:4px;overflow:hidden;margin-top:4px}
+.minibar span{display:block;height:100%;background:var(--accent)}
+.minibar span.low{background:var(--warn)}
+#detalle .barlist{margin:6px 0 10px;padding-left:20px}
+#detalle .fix{margin:4px 0}
+.aviso{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+.aviso.f{background:var(--warn-tint);border-color:var(--warn)}
+.aviso .tag{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase}
+.aviso.f .tag{color:var(--warn-ink)}
+.aviso p{margin:4px 0}
+#avisos{max-height:420px;overflow:auto}
+dialog{border:none;border-radius:14px;padding:0;max-width:min(640px,94vw);color:var(--ink);background:var(--surface)}
+dialog::backdrop{background:rgba(22,25,29,.6)}
+dialog .in{padding:22px 24px;display:flex;flex-direction:column;gap:12px}
+dialog h2{margin:0;font-size:1.4rem}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.vecinos-wrap{overflow-x:auto}
+@media (prefers-reduced-motion: no-preference){ .meter>span,.minibar span{transition:width .3s} }
+html.rm *{transition:none!important}
+</style>
+</head>
+<body>
+<a class="skip" href="#mapa-zona">Saltar al mapa</a>
+<header class="top">
+  <div>
+    <h1>Accesible Madrid · Lavapiés para todos</h1>
+    <div class="sub">Prototipo jugable · Distrito Centro, barrio de Embajadores</div>
+  </div>
+  <dl class="stats" aria-label="Estado de la partida">
+    <div><dt>Día</dt><dd id="s-dia">1 de 30</dd></div>
+    <div><dt>Índice de Autonomía (objetivo 70)</dt><dd><span id="s-ia">—</span><div class="meter" aria-hidden="true"><span id="s-iabar" style="width:0%"></span><i></i></div></dd></div>
+    <div><dt>Presupuesto</dt><dd id="s-pres">250 créditos</dd></div>
+    <div><dt>Participación</dt><dd id="s-part">100</dd></div>
+    <div><dt>Mantenimiento</dt><dd id="s-mant">0 / semana</dd></div>
+  </dl>
+  <div class="actions">
+    <button class="btn primary" id="b-dia" type="button">Pasar al día siguiente</button>
+    <button class="btn" id="b-avisar" type="button">Avisar al vecindario · 2</button>
+    <button class="btn" id="b-ajustes" type="button">Accesibilidad</button>
+    <button class="btn dark" id="b-ayuda" type="button">Ayuda</button>
+    <button class="btn" id="b-instalar" type="button" hidden>Instalar</button>
+  </div>
+</header>
+
+<div id="anuncio" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+<div class="layout">
+  <section id="construir" class="panel" aria-labelledby="h-constr">
+    <h2 id="h-constr">Construir</h2>
+    <fieldset>
+      <legend class="hint" style="margin:0 0 8px">Elige una mejora para ver en el mapa dónde sirve.</legend>
+      <div id="catalogo"></div>
+    </fieldset>
+    <p class="hint">Después, selecciona un tramo o un destino y pulsa «Construir». Nunca hace falta arrastrar.</p>
+  </section>
+
+  <section id="centro" aria-labelledby="h-barrio">
+    <h2 id="h-barrio" class="sr-only">El barrio</h2>
+    <div role="tablist" aria-label="Vista del barrio">
+      <button role="tab" id="tab-mapa" aria-selected="true" aria-controls="panel-mapa" type="button">Mapa</button>
+      <button role="tab" id="tab-lista" aria-selected="false" aria-controls="panel-lista" tabindex="-1" type="button">Lista de tramos</button>
+    </div>
+    <div id="panel-mapa" role="tabpanel" aria-labelledby="tab-mapa">
+      <div class="mapbar" role="group" aria-label="Tamaño del mapa">
+        <button class="btn" type="button" id="z-menos" aria-label="Alejar el mapa">−</button>
+        <button class="btn" type="button" id="z-mas" aria-label="Acercar el mapa">+</button>
+        <output id="z-valor" aria-live="polite">Ajustado</output>
+        <span class="hint" id="z-hint" style="margin:0">Con el mapa grande, desliza para moverte por él.</span>
+      </div>
+      <div class="mapwrap" id="mapa-zona" tabindex="-1">
+        <div class="mapscroll" id="mapscroll">
+          <svg id="mapa" viewBox="0 0 800 520" role="group" aria-label="Mapa de Lavapiés. Usa las flechas para moverte por tramos y destinos, e Intro para seleccionar."></svg>
+        </div>
+      </div>
+      <div class="legend" aria-label="Leyenda">
+        <span><svg width="36" height="10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="#1D4ED8" stroke-width="6" stroke-linecap="round"/></svg>Tramo sin barreras (continuo)</span>
+        <span><svg width="36" height="10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="#B45309" stroke-width="6" stroke-dasharray="8 6"/></svg>Tramo con barreras (discontinuo, con número)</span>
+        <span><svg width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="#16191D"/></svg>Casa de un vecino (inicial)</span>
+        <span><svg width="36" height="10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="#16191D" stroke-width="4" stroke-dasharray="2 6" stroke-linecap="round"/></svg>Ruta consultada</span>
+      </div>
+    </div>
+    <div id="panel-lista" role="tabpanel" aria-labelledby="tab-lista" hidden>
+      <div class="panel" style="border-radius:0 10px 10px 10px">
+        <table>
+          <caption class="sr-only">Tramos y destinos con barreras</caption>
+          <thead><tr><th scope="col">Lugar</th><th scope="col">Barreras</th><th scope="col"><span class="sr-only">Acción</span></th></tr></thead>
+          <tbody id="lista-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <section class="panel" aria-labelledby="h-vec">
+      <h2 id="h-vec">Vecinos</h2>
+      <div class="vecinos-wrap">
+      <table>
+        <thead><tr><th scope="col">Vecino</th><th scope="col">Autonomía (7 días)</th><th scope="col">Último día: pulsa un viaje para ver su ruta</th></tr></thead>
+        <tbody id="vecinos-body"></tbody>
+      </table>
+      </div>
+    </section>
+  </section>
+
+  <aside id="lateral" aria-label="Detalle y avisos">
+    <section id="detalle" class="panel" aria-labelledby="h-det" tabindex="-1">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <h2 id="h-det">Selecciona un lugar</h2>
+        <button class="btn" type="button" id="det-cerrar">Cerrar</button>
+      </div>
+      <div id="det-body"><p class="hint" style="margin:0">Pulsa un tramo o un destino del mapa, o muévete con las flechas y pulsa Intro.</p></div>
+    </section>
+    <section class="panel" aria-labelledby="h-av">
+      <h2 id="h-av">Avisos</h2>
+      <div id="avisos"><p class="hint" style="margin:0">Pulsa «Pasar al día siguiente» para que los vecinos salgan a la calle.</p></div>
+    </section>
+  </aside>
+</div>
+
+<dialog id="d-intro" aria-labelledby="h-intro">
+  <div class="in">
+    <h2 id="h-intro">Hola. Soy Rosa, de la Oficina de Accesibilidad.</h2>
+    <p>Hoy eres concejal de Accesibilidad del Ayuntamiento de Madrid. Tu barrio es Lavapiés.</p>
+    <p>Seis vecinos quieren ir al centro de salud, al mercado, a la Junta Municipal y al centro cultural. Muchos no pueden.</p>
+    <p><strong>Tu objetivo:</strong> en 30 días, Índice de Autonomía de 70 o más, y ningún vecino por debajo de 50.</p>
+    <p>Cada día que pases, los vecinos lo intentan. Si algo les para, te avisan. Tú arreglas las barreras con tu presupuesto. No hay prisa: el tiempo solo avanza cuando tú quieres.</p>
+    <div class="row"><button class="btn primary" type="button" id="b-empezar">Empezar</button><button class="btn" type="button" id="b-intro-ajustes">Ajustar accesibilidad primero</button></div>
+  </div>
+</dialog>
+
+<dialog id="d-ayuda" aria-labelledby="h-ayuda">
+  <div class="in">
+    <h2 id="h-ayuda">Ayuda</h2>
+    <ul>
+      <li><strong>Tabulador:</strong> pasa de una zona a otra.</li>
+      <li><strong>Flechas, en el mapa:</strong> te mueven al tramo o destino más cercano en esa dirección.</li>
+      <li><strong>Intro o Espacio:</strong> selecciona el lugar y muestra sus barreras.</li>
+      <li><strong>Construir:</strong> en el panel de detalle, pulsa la mejora que quieras.</li>
+      <li><strong>Viaje con dificultad:</strong> el vecino llega, pero cuenta como medio viaje.</li>
+      <li><strong>Viaje fallido:</strong> el vecino vuelve a casa. Si falla 5 veces en una semana, deja de intentarlo. Arregla la barrera y pulsa «Avisar al vecindario».</li>
+      <li>Si prefieres no usar el mapa, la pestaña <strong>Lista de tramos</strong> tiene lo mismo en una tabla.</li>
+    </ul>
+    <div class="row"><button class="btn primary" type="button" data-close>Cerrar</button></div>
+  </div>
+</dialog>
+
+<dialog id="d-ajustes" aria-labelledby="h-ajustes">
+  <div class="in">
+    <h2 id="h-ajustes">Accesibilidad</h2>
+    <fieldset>
+      <legend style="font-weight:700;margin-bottom:6px">Tamaño del texto</legend>
+      <div class="row" id="tam-opts">
+        <label class="opt"><input type="radio" name="tam" value="t100" checked> 100 %</label>
+        <label class="opt"><input type="radio" name="tam" value="t125"> 125 %</label>
+        <label class="opt"><input type="radio" name="tam" value="t150"> 150 %</label>
+        <label class="opt"><input type="radio" name="tam" value="t200"> 200 %</label>
+      </div>
+    </fieldset>
+    <label class="opt"><input type="checkbox" id="o-hc"> Alto contraste</label>
+    <label class="opt"><input type="checkbox" id="o-rm"> Reducir movimiento</label>
+    <p class="hint">Se guarda en este navegador para no volver a pedírtelo.</p>
+    <div class="row"><button class="btn primary" type="button" data-close>Listo</button></div>
+  </div>
+</dialog>
+
+<dialog id="d-instalar" aria-labelledby="h-instalar">
+  <div class="in">
+    <h2 id="h-instalar">Instalar en este móvil</h2>
+    <p id="inst-texto"></p>
+    <ol id="inst-pasos"></ol>
+    <p class="hint">Una vez instalado, se abre desde su icono y funciona sin conexión.</p>
+    <div class="row"><button class="btn primary" type="button" data-close>Entendido</button></div>
+  </div>
+</dialog>
+
+<dialog id="d-fin" aria-labelledby="h-fin">
+  <div class="in">
+    <h2 id="h-fin"></h2>
+    <div id="fin-body"></div>
+    <div class="row"><button class="btn primary" type="button" id="b-reiniciar">Jugar otra vez</button><button class="btn" type="button" data-close>Seguir mirando el barrio</button></div>
+  </div>
+</dialog>
+
+<script src="engine.js"></script>
+<script src="app.js"></script>
+<script>
+(function () {
+  var deferred = null, btn = document.getElementById('b-instalar');
+  var standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var seguro = location.protocol === 'https:' || location.hostname === 'localhost';
+  if ('serviceWorker' in navigator && seguro) {
+    try { navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
+  }
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; if (!standalone) btn.hidden = false; });
+  if (ios && !standalone && seguro) btn.hidden = false;
+  btn.addEventListener('click', function () {
+    if (deferred) {
+      deferred.prompt();
+      deferred.userChoice.then(function () { deferred = null; btn.hidden = true; });
+      return;
+    }
+    var d = document.getElementById('d-instalar');
+    document.getElementById('inst-texto').textContent = ios ? 'En iPhone y iPad se instala desde Safari:' : 'En Android se instala desde Chrome:';
+    document.getElementById('inst-pasos').innerHTML = ios
+      ? '<li>Pulsa el botón Compartir (el cuadrado con una flecha hacia arriba).</li><li>Elige «Añadir a pantalla de inicio».</li><li>Pulsa «Añadir».</li>'
+      : '<li>Abre el menú de Chrome (los tres puntos).</li><li>Elige «Instalar aplicación» o «Añadir a pantalla de inicio».</li><li>Confirma con «Instalar».</li>';
+    if (typeof d.showModal === 'function') d.showModal(); else d.setAttribute('open', '');
+  });
+  window.addEventListener('appinstalled', function () { btn.hidden = true; });
+})();
+</script>
+</body>
+</html>
