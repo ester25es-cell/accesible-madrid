@@ -605,14 +605,21 @@
       $('subtitulos').hidden = false;
     }
     var spoke = false;
+    unlockAudio();
     if (synth) {
       try {
-        synth.cancel();
+        // En iOS, cancel() justo antes de speak() puede tragarse la frase: solo se cancela si hay algo sonando
+        if (synth.speaking || synth.pending) synth.cancel();
         var u = new SpeechSynthesisUtterance(text);
         u.lang = 'es-ES'; if (voiceES) u.voice = voiceES;
         u.rate = settings.lenta ? 0.8 : 1;
+        var started = false;
+        u.onstart = function () { started = true; $('sub-aviso').hidden = true; if ($('d-ajustes').open) $('probar-estado').textContent = 'La voz está sonando: el audio funciona.'; };
         u.onend = function () { capTimer = setTimeout(hideCaption, 1500); };
+        u.onerror = function (e) { if (e && (e.error === 'interrupted' || e.error === 'canceled')) return; showNoVoice(); };
+        if (synth.paused) synth.resume();
         synth.speak(u); spoke = true;
+        setTimeout(function () { if (!started && !synth.speaking) showNoVoice(); }, 2500);
       } catch (e) { spoke = false; }
     }
     if (!spoke) {
@@ -622,6 +629,35 @@
       capTimer = setTimeout(hideCaption, Math.max(6000, text.length * 110));
     }
   }
+  function showNoVoice() {
+    $('sub-aviso').hidden = false;
+    if ($('d-ajustes').open) $('probar-estado').innerHTML = '<strong>La voz no ha sonado.</strong> Prueba esto: 1) sube el volumen con los botones laterales; 2) quita el modo silencio; 3) en iPhone, comprueba que tienes una voz en español en Ajustes › Accesibilidad › Contenido leído › Voces; 4) si usas VoiceOver, los avisos ya los lee VoiceOver. Los subtítulos siguen funcionando aunque no haya voz.';
+    if ($('subtitulos').hidden) { $('sub-quien').textContent = ''; $('sub-texto').textContent = ''; $('subtitulos').hidden = false; }
+    clearTimeout(capTimer); capTimer = setTimeout(hideCaption, 9000);
+  }
+  // iOS: el audio web solo funciona tras un toque, y en modo silencio se apaga si no se declara como reproducción
+  var audioUnlocked = false;
+  function unlockAudio() {
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    if (audioUnlocked) { try { if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); } catch (e) {} return; }
+    audioUnlocked = true;
+    try {
+      var C = window.AudioContext || window.webkitAudioContext;
+      if (C) {
+        audioCtx = audioCtx || new C();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        var buf = audioCtx.createBuffer(1, 1, 22050), src = audioCtx.createBufferSource();
+        src.buffer = buf; src.connect(audioCtx.destination); src.start(0);
+      }
+    } catch (e) {}
+  }
+  document.addEventListener('touchend', unlockAudio, { passive: true });
+  document.addEventListener('click', unlockAudio);
+  $('b-probar').addEventListener('click', function () {
+    unlockAudio(); sound('construir');
+    $('probar-estado').textContent = 'Probando: deberías oír un sonido corto y después la voz de Rosa…';
+    setTimeout(function () { say('Rosa', 'Prueba de voz. Si me oyes, el audio funciona.'); }, 600);
+  });
   $('sub-parar').addEventListener('click', function () { try { synth && synth.cancel(); } catch (e) {} hideCaption(); });
   var audioCtx = null, toastTimer = null;
   function sound(kind) {
@@ -629,6 +665,7 @@
     try {
       var C = window.AudioContext || window.webkitAudioContext;
       audioCtx = audioCtx || new C();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       var t0 = audioCtx.currentTime;
       var notes = kind === 'aviso' ? [660, 440] : kind === 'construir' ? [523, 659, 784] : [523, 659, 784, 1047];
       notes.forEach(function (f, i) {
