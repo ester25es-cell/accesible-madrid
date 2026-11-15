@@ -26,6 +26,7 @@
 html.hc{ --bg:#FFFFFF; --muted:#16191D; --line:#16191D; --accent:#0B3BB5; --warn:#8A3B07; --warn-ink:#6A2C05; --map:#FFFFFF; --block:#EDEDED; --block-line:#16191D; }
 html.t125{font-size:125%} html.t150{font-size:150%} html.t200{font-size:200%}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);background:var(--bg);color:var(--ink);font-family:'Atkinson Hyperlegible',system-ui,sans-serif;font-size:1rem;line-height:1.4}
 a{color:var(--accent)}
 button,select,input{font:inherit;color:inherit}
@@ -100,7 +101,17 @@ fieldset{border:none;margin:0;padding:0;min-width:0}
 .dest rect.box{fill:var(--surface);stroke:var(--line);stroke-width:1.5}
 .dest.hasbar rect.box{stroke:var(--warn);stroke-width:3}
 .dest text{font-size:12px;font-weight:700;fill:var(--ink)}
-.home circle{fill:var(--ink)} .home text{fill:#fff;font-size:13px;font-weight:700}
+.home path{fill:var(--ink)} .home text{fill:var(--bg);font-size:12px;font-weight:700}
+.walker circle{fill:#FFFFFF;stroke:var(--accent);stroke-width:4}
+.walker text{fill:var(--ink);font-size:13px;font-weight:700}
+.walker.stuck circle{stroke:var(--warn);stroke-width:5}
+.btn.small{min-height:36px;padding:0 10px;font-size:.85rem;margin-top:6px}
+.opt.barrio{align-items:flex-start;padding:10px}
+.opt.barrio input{margin-top:3px}
+.subs{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:30;max-width:min(860px,94vw);display:flex;gap:12px;align-items:center;padding:12px 16px;border-radius:12px;background:rgba(10,12,15,.92);color:#fff;font-size:1.1rem;line-height:1.35;box-shadow:0 4px 18px rgba(0,0,0,.3)}
+.subs .btn{background:#fff;color:#16191D;border-color:#fff;flex-shrink:0}
+body.has-sheet .subs{bottom:calc(48vh + 8px)}
+.toast{position:fixed;right:16px;bottom:96px;z-index:30;padding:8px 14px;border-radius:999px;background:var(--ink);color:var(--bg);font-weight:700}
 .route{fill:none;stroke:var(--ink);stroke-width:4;stroke-dasharray:2 6;stroke-linecap:round}
 .legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.9rem;padding:8px 2px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
@@ -122,6 +133,11 @@ thead th{border-top:none;font-size:.85rem;color:var(--muted)}
 .aviso .tag{font-size:.8rem;font-weight:700;color:var(--muted);text-transform:uppercase}
 .aviso.f .tag{color:var(--warn-ink)}
 .aviso p{margin:4px 0}
+.aviso.imp{border:2px dashed var(--warn);background:var(--surface)}
+.aviso.imp .tag{color:var(--warn-ink)}
+.aviso.dinero{border-color:var(--accent);background:var(--accent-tint)}
+.aviso.dinero .tag{color:var(--accent-ink)}
+#d-creditos li{margin-bottom:8px}
 #avisos{max-height:420px;overflow:auto}
 dialog{border:none;border-radius:14px;padding:0;max-width:min(640px,94vw);color:var(--ink);background:var(--surface)}
 dialog::backdrop{background:rgba(22,25,29,.6)}
@@ -137,8 +153,8 @@ html.rm *{transition:none!important}
 <a class="skip" href="#mapa-zona">Saltar al mapa</a>
 <header class="top">
   <div>
-    <h1>Accesible Madrid · Lavapiés para todos</h1>
-    <div class="sub">Prototipo jugable · Distrito Centro, barrio de Embajadores</div>
+    <h1 id="titulo">Accesible Madrid</h1>
+    <div class="sub" id="subtitulo"></div>
   </div>
   <dl class="stats" aria-label="Estado de la partida">
     <div><dt>Día</dt><dd id="s-dia">1 de 30</dd></div>
@@ -146,10 +162,13 @@ html.rm *{transition:none!important}
     <div><dt>Presupuesto</dt><dd id="s-pres">250 créditos</dd></div>
     <div><dt>Participación</dt><dd id="s-part">100</dd></div>
     <div><dt>Mantenimiento</dt><dd id="s-mant">0 / semana</dd></div>
+    <div><dt>Próximo ingreso</dt><dd id="s-ingreso">Día 7</dd></div>
+    <div style="justify-content:flex-end"><button class="btn small" id="b-creditos" type="button" style="margin:0">¿Cómo consigo créditos?</button></div>
   </dl>
   <div class="actions">
     <button class="btn primary" id="b-dia" type="button">Pasar al día siguiente</button>
     <button class="btn" id="b-avisar" type="button">Avisar al vecindario · 2</button>
+    <button class="btn" id="b-barrio" type="button">Cambiar de barrio</button>
     <button class="btn" id="b-ajustes" type="button">Accesibilidad</button>
     <button class="btn dark" id="b-ayuda" type="button">Ayuda</button>
     <button class="btn" id="b-instalar" type="button" hidden>Instalar</button>
@@ -179,7 +198,9 @@ html.rm *{transition:none!important}
         <button class="btn" type="button" id="z-menos" aria-label="Alejar el mapa">−</button>
         <button class="btn" type="button" id="z-mas" aria-label="Acercar el mapa">+</button>
         <output id="z-valor" aria-live="polite">Ajustado</output>
+        <button class="btn" type="button" id="b-anim" aria-pressed="true">Pausar vecinos</button>
         <span class="hint" id="z-hint" style="margin:0">Con el mapa grande, desliza para moverte por él.</span>
+        <span class="hint" id="anim-hint" style="margin:0" hidden>El movimiento está desactivado en Accesibilidad.</span>
       </div>
       <div class="mapwrap" id="mapa-zona" tabindex="-1">
         <div class="mapscroll" id="mapscroll">
@@ -189,8 +210,10 @@ html.rm *{transition:none!important}
       <div class="legend" aria-label="Leyenda">
         <span><svg width="36" height="10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="#1D4ED8" stroke-width="6" stroke-linecap="round"/></svg>Tramo sin barreras (continuo)</span>
         <span><svg width="36" height="10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="#B45309" stroke-width="6" stroke-dasharray="8 6"/></svg>Tramo con barreras (discontinuo, con número)</span>
-        <span><svg width="22" height="22" aria-hidden="true"><circle cx="11" cy="11" r="10" fill="#16191D"/></svg>Casa de un vecino (inicial)</span>
+        <span><svg width="24" height="24" aria-hidden="true"><path d="M2 11 L12 2 L22 11 V22 H2 Z" fill="#16191D"/></svg>Casa de un vecino (inicial)</span>
         <span><svg width="36" height="10" aria-hidden="true"><line x1="2" y1="5" x2="34" y2="5" stroke="#16191D" stroke-width="4" stroke-dasharray="2 6" stroke-linecap="round"/></svg>Ruta consultada</span>
+        <span><svg width="26" height="26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="#fff" stroke="#1D4ED8" stroke-width="4"/></svg>Vecino caminando (borde naranja: se ha quedado parado)</span>
+        <span>Mapa estilizado: calles reales, colocación simplificada.</span>
       </div>
     </div>
     <div id="panel-lista" role="tabpanel" aria-labelledby="tab-lista" hidden>
@@ -232,11 +255,20 @@ html.rm *{transition:none!important}
 <dialog id="d-intro" aria-labelledby="h-intro">
   <div class="in">
     <h2 id="h-intro">Hola. Soy Rosa, de la Oficina de Accesibilidad.</h2>
-    <p>Hoy eres concejal de Accesibilidad del Ayuntamiento de Madrid. Tu barrio es Lavapiés.</p>
-    <p>Seis vecinos quieren ir al centro de salud, al mercado, a la Junta Municipal y al centro cultural. Muchos no pueden.</p>
-    <p><strong>Tu objetivo:</strong> en 30 días, Índice de Autonomía de 70 o más, y ningún vecino por debajo de 50.</p>
-    <p>Cada día que pases, los vecinos lo intentan. Si algo les para, te avisan. Tú arreglas las barreras con tu presupuesto. No hay prisa: el tiempo solo avanza cuando tú quieres.</p>
-    <div class="row"><button class="btn primary" type="button" id="b-empezar">Empezar</button><button class="btn" type="button" id="b-intro-ajustes">Ajustar accesibilidad primero</button></div>
+    <div id="intro-texto">
+      <p>Eres concejal de Accesibilidad del Ayuntamiento de Madrid. Cada día, seis vecinos intentan ir a sus sitios. Si algo les para, te avisan. Tú quitas las barreras con tu presupuesto. No hay prisa: el tiempo solo avanza cuando tú quieres.</p>
+      <p><strong>Objetivo:</strong> en 30 días, un Índice de Autonomía de 70 o más, y ningún vecino por debajo de 50.</p>
+    </div>
+    <p id="intro-aviso" hidden>Al cambiar de barrio empiezas una partida nueva.</p>
+    <fieldset>
+      <legend style="font-weight:700;margin-bottom:8px">Elige barrio</legend>
+      <div id="lista-barrios"></div>
+    </fieldset>
+    <div class="row">
+      <button class="btn primary" type="button" id="b-empezar">Empezar</button>
+      <button class="btn" type="button" data-say="rosa">Escuchar a Rosa</button>
+      <button class="btn" type="button" id="b-intro-ajustes">Ajustar accesibilidad</button>
+    </div>
   </div>
 </dialog>
 
@@ -251,6 +283,10 @@ html.rm *{transition:none!important}
       <li><strong>Viaje con dificultad:</strong> el vecino llega, pero cuenta como medio viaje.</li>
       <li><strong>Viaje fallido:</strong> el vecino vuelve a casa. Si falla 5 veces en una semana, deja de intentarlo. Arregla la barrera y pulsa «Avisar al vecindario».</li>
       <li>Si prefieres no usar el mapa, la pestaña <strong>Lista de tramos</strong> tiene lo mismo en una tabla.</li>
+      <li><strong>Imprevistos:</strong> algunos días aparecen obras, terrazas, coches o patinetes que estorban. Pulsa «Ver y actuar»: si es ilegal, la multa te devuelve créditos.</li>
+      <li><strong>Créditos:</strong> el botón «¿Cómo consigo créditos?» explica el ingreso semanal, las multas, el premio vecinal y los fondos europeos.</li>
+      <li><strong>Escuchar:</strong> los botones «Escuchar» leen en voz alta los avisos, lo que cuenta cada vecino y cada lugar, con subtítulos. En Accesibilidad puedes hacer que los avisos se lean solos.</li>
+      <li><strong>Vecinos en movimiento:</strong> tras pasar un día, cada vecino repite su camino en el mapa y se para donde algo le bloquea. Puedes pausarlo con «Pausar vecinos».</li>
     </ul>
     <div class="row"><button class="btn primary" type="button" data-close>Cerrar</button></div>
   </div>
@@ -269,7 +305,14 @@ html.rm *{transition:none!important}
       </div>
     </fieldset>
     <label class="opt"><input type="checkbox" id="o-hc"> Alto contraste</label>
-    <label class="opt"><input type="checkbox" id="o-rm"> Reducir movimiento</label>
+    <label class="opt"><input type="checkbox" id="o-rm"> Reducir movimiento (los vecinos no se animan)</label>
+    <fieldset>
+      <legend style="font-weight:700;margin:6px 0">Voz y sonido</legend>
+      <label class="opt"><input type="checkbox" id="o-voz"> Leer en voz alta los avisos sin tener que pulsar</label>
+      <label class="opt"><input type="checkbox" id="o-subs"> Subtítulos de lo que se dice</label>
+      <label class="opt"><input type="checkbox" id="o-lenta"> Voz más lenta</label>
+      <label class="opt"><input type="checkbox" id="o-sfx"> Efectos de sonido (con aviso visual)</label>
+    </fieldset>
     <p class="hint">Se guarda en este navegador para no volver a pedírtelo.</p>
     <div class="row"><button class="btn primary" type="button" data-close>Listo</button></div>
   </div>
@@ -285,6 +328,24 @@ html.rm *{transition:none!important}
   </div>
 </dialog>
 
+<dialog id="d-creditos" aria-labelledby="h-creditos">
+  <div class="in">
+    <h2 id="h-creditos">¿Cómo consigo más créditos?</h2>
+    <ol id="creditos-texto">
+      <li><strong>Ingreso semanal.</strong> Cada 7 días el distrito te da dinero. Cuantos más vecinos participan en la vida del barrio, más recibes. El mantenimiento de ascensores se descuenta. <span id="cr-ingreso"></span></li>
+      <li><strong>Multas.</strong> Cuando aparece un imprevisto ilegal (una terraza en la acera, un coche sobre el rebaje, patinetes tirados, una obra sin desvío), actúa: la multa te devuelve más de lo que cuesta.</li>
+      <li><strong>Premio vecinal.</strong> Cada vecino que llega a 70 de autonomía por primera vez te da 10 créditos.</li>
+      <li><strong>Fondos europeos.</strong> <span id="cr-fondos"></span></li>
+    </ol>
+    <p class="hint">Consejo: empieza por lo barato que desbloquea a más gente, como los rebajes de bordillo, y deja lo caro para después.</p>
+    <div class="row">
+      <button class="btn primary" type="button" id="b-fondos">Pedir fondos europeos</button>
+      <button class="btn" type="button" data-say="creditos">Escuchar</button>
+      <button class="btn" type="button" data-close>Cerrar</button>
+    </div>
+  </div>
+</dialog>
+
 <dialog id="d-fin" aria-labelledby="h-fin">
   <div class="in">
     <h2 id="h-fin"></h2>
@@ -292,6 +353,9 @@ html.rm *{transition:none!important}
     <div class="row"><button class="btn primary" type="button" id="b-reiniciar">Jugar otra vez</button><button class="btn" type="button" data-close>Seguir mirando el barrio</button></div>
   </div>
 </dialog>
+
+<div class="subs" id="subtitulos" hidden><span><strong id="sub-quien" aria-hidden="true"></strong> <span id="sub-texto" aria-hidden="true"></span></span><button type="button" class="btn" id="sub-parar">Parar la voz</button></div>
+<div class="toast" id="toast" aria-hidden="true" hidden></div>
 
 <script src="engine.js"></script>
 <script src="app.js"></script>
